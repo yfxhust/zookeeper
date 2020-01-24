@@ -782,6 +782,10 @@ public class ClientCnxn {
         eventThread.queueCallback(cb, rc, path, ctx);
     }
 
+    protected void onConnecting(InetSocketAddress addr) {
+        LOG.info("Connecting server {}.", addr);
+    }
+
     private void conLossPacket(Packet p) {
         if (p.replyHeader == null) {
             return;
@@ -1121,6 +1125,9 @@ public class ClientCnxn {
                     LOG.warn("Unexpected exception", e);
                 }
             }
+            if (!state.isAlive()) {
+                throw new RuntimeException("Already closed");
+            }
             state = States.CONNECTING;
 
             String hostPort = addr.getHostString() + ":" + addr.getPort();
@@ -1179,6 +1186,7 @@ public class ClientCnxn {
                         } else {
                             serverAddress = hostProvider.next(1000);
                         }
+                        ClientCnxn.this.onConnecting(serverAddress);
                         startConnect(serverAddress);
                         clientCnxnSocket.updateLastSendAndHeard();
                     }
